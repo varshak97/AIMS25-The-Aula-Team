@@ -75,6 +75,8 @@ The Aula Fellowship/ Indira Gandhi Delhi Technical University for Women,
 Undergrad, Electronics and Communication Engineering,
 Contributors from The Aula Fellowship.
 
+**Other Contributors:**
+
 **Varsha Kesavan, MSc.,**
 The Aula Fellowship / University of Alberta,
 Canada and India,
