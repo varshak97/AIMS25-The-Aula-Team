@@ -24,9 +24,9 @@ Team members, including survivors, validated key assumptions with AIMS presenter
 We are Fellows of the Aula Fellowship for AI Science, Policy, and Tech. We are a small but growing NGO. Our website is: [https://theaulafellowship.org](https://theaulafellowship.org). The complete project document contains details on the above, as well as the data and code notes for our submission. 
 
 # 4. Links
-Demo: 
-GitHub: [fpasoslibres/AIMS-The-Aula-Team](https://github.com/varshak97/AIMS25-The-Aula-Team) 
-Pitch Video: [Link to YouTube video](https://youtu.be/6Ox5CZ0LexA) 
+- Demo: 
+- GitHub: [fpasoslibres/AIMS-The-Aula-Team](https://github.com/varshak97/AIMS25-The-Aula-Team) 
+- Pitch Video: [Link to YouTube video](https://youtu.be/6Ox5CZ0LexA) 
 
 # 5. Datasets
 Location: [Datasets.md](https://github.com/varshak97/AIMS25-The-Aula-Team/blob/main/Datasets.md)

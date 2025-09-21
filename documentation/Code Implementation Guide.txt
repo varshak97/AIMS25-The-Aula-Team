@@ -1,0 +1,151 @@
+Streamlit Application: Code Implementation Guide
+
+1. Overview
+This guide focuses on the code implementation for the Survivor Dashboard + AIMS LLM Streamlit
+application. It details the structure, key classes, model usage, and summarization pipeline.
+
+2. Imports
+import streamlit as st
+import pandas as pd
+import gspread
+from google.oauth2.service_account import Credentials
+import google.generativeai as genai
+from torch.utils.data import Dataset, DataLoader
+import torch
+from torch import nn
+import numpy as np
+import re
+from transformers import AutoTokenizer, AutoModel, AutoModelForMaskedLM
+• streamlit for UI
+• pandas for data handling
+• gspread + google.oauth2.service_account for Google Sheets integration
+• torch and torch.nn for model inference
+• transformers for BERT model loading
+• google.generativeai for summarization
+
+3. Streamlit UI Structure
+3.1 Page Config & CSS
+st.set_page_config(layout="wide", page_title="Survivor Dashboard + AIMS LLM")
+# Custom CSS
+st.markdown("""
+<style>
+.stApp { background-color: white; }
+html, body, [class*="css"] { color: black !important; }
+.stDataFrame td, .stDataFrame th { color: black !important; background-color:
+white !important; }
+
+1
+
+</style>
+""", unsafe_allow_html=True)
+• White theme with clear text for dataframes.
+• Page title and layout configuration.
+
+3.2 Tabs
+tab1, tab2 = st.tabs(["📊 Survivor Dashboard", "🤖 Insight on Supply Chains
+(from AIMS)"])
+• tab1 for Google Sheets data.
+• tab2 for AIMSDistill LLM summarization.
+
+4. Survivor Dashboard Implementation (Tab 1)
+• Google Sheet Input: Sidebar input and worksheet selection.
+• Filters: Region, Industry, Category, Title, Links.
+• Display: Rows with emojis for metadata.
+• Warnings: Alert if no data matches filters.
+Example snippet:
+
+sheet_url = st.sidebar.text_input("📄 Google Sheet URL")
+if sheet_url:
+creds =
+Credentials.from_service_account_info(st.secrets["google_service_account"],
+scopes=SCOPES)
+gc = gspread.authorize(creds)
+sh = gc.open_by_url(sheet_url)
+df = pd.DataFrame(sh.worksheet(sheet_name).get_all_records())
+
+5. AIMSDistill Model Setup (Tab 2)
+5.1 Tokenizer & Model Initialization
+model_name = "bert-base-uncased"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForMaskedLM.from_pretrained(model_name,
+trust_remote_code=True)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+2
+
+5.2 AIMSDistill Model Class
+class AimsDistillModel(nn.Module):
+def __init__(self, tokenizer, model_name, dropout=0.0):
+super().__init__()
+self.bert = AutoModel.from_pretrained(model_name,
+trust_remote_code=True)
+self.dropout = nn.Dropout(p=dropout)
+self.classifier = nn.Linear(self.bert.config.hidden_size, 11)
+def forward(self, input_ids, attention_mask=None):
+outputs = self.bert(input_ids=input_ids,
+attention_mask=attention_mask)
+pooled_output = outputs.last_hidden_state[:, 0, :]
+logits = self.dropout(self.classifier(pooled_output))
+return logits
+model = AimsDistillModel(tokenizer, model_name).to(device)
+model.eval()
+• 11-label classification.
+• Dropout applied before the classifier.
+
+5.3 Dataset Class
+class StoryDataset(Dataset):
+def __init__(self, texts, tokenizer, max_length):
+self.texts = texts
+self.tokenizer = tokenizer
+self.max_length = max_length
+def __len__(self):
+return len(self.texts)
+def __getitem__(self, idx):
+text = self.texts[idx]
+inputs = self.tokenizer(text, return_tensors="pt",
+padding="max_length", truncation=True, max_length=self.max_length)
+input_ids = inputs["input_ids"].squeeze(0)
+attention_mask = inputs["attention_mask"].squeeze(0)
+return input_ids, attention_mask
+• Handles tokenization for single sentences.
+• Returns tensors for DataLoader.
+
+3
+
+6. Inference Pipeline
+from torch.utils.data import DataLoader
+dataset = StoryDataset(sentences, tokenizer, max_length=60)
+dataloader = DataLoader(dataset, batch_size=32, shuffle=False)
+STORIES_pred = []
+model.eval()
+with torch.no_grad():
+for batch in dataloader:
+input_ids, attention_mask = [b.to(device) for b in batch]
+logits = model(input_ids=input_ids, attention_mask=attention_mask)
+pred = (logits > 0.9).float()
+STORIES_pred.extend(pred.cpu().numpy())
+• Processes batches efficiently.
+• Predictions thresholded at 0.9.
+
+7. Gemini Summarization
+import google.generativeai as genai
+genai.configure(api_key=st.secrets['genai']['api_key'])
+model = genai.GenerativeModel("gemini-2.5-flash")
+prompt = f"Summarize the following sentences:\n{sentences_chunk}"
+response = model.generate_content(prompt)
+summary = response.text
+• Sentences are chunked (80 per chunk) to handle large datasets.
+• Merge chunk summaries into final coherent summary.
+
+8. Tips
+1. Replace ModernBERT with bert-base-uncased .
+2. Always use trust_remote_code=True when loading models.
+3. Ensure AIMSDistill.pth is accessible.
+4. GPU is recommended for faster inference.
+5. Streamlit secrets must contain Google API keys.
+
+End of Code Implementation Guide
+
+4
+
+

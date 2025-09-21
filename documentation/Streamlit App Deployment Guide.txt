@@ -1,0 +1,171 @@
+Streamlit Application Deployment Guide: Survivor Dashboard + AIMS LLM
+
+1. Overview
+This guide covers the setup and deployment of the Survivor Dashboard + AIMS LLM application
+using Streamlit, including dataset handling, Google Sheets integration, AIMSDistill LLM processing, and
+summarization with Gemini.
+The application has two main tabs:
+1. Survivor Dashboard: Displays filtered entries from a Google Sheet.
+2. AIMS LLM Insight: Summarizes risk description sentences from the dashboard or uploaded text
+files using a BERT-based model and Google Gemini API.
+
+2. Folder Structure
+project_root/
+│
+├── streamlit_app.py
+
+# Main Streamlit app
+
+├── requirements.txt
+
+# Python dependencies
+
+├── AIMSDistill.pth
+
+# Pretrained PyTorch model weights
+
+├── assets/
+
+# Banner images
+
+│
+
+├── AULA_HORIZONTAL_GREEN_BANNER.png
+
+│
+
+└── survivor_dashboard_banner.png
+
+└── data/
+
+# Optional: CSV files for testing
+
+3. Dependencies (requirements.txt)
+# Streamlit & UI
+streamlit==1.49.1
+altair==5.5.0
+# Data handling
+pandas==2.3.2
+numpy==2.3.3
+pyarrow==21.0.0
+python-dateutil==2.9.0.post0
+pytz==2025.2
+six==1.17.0
+packaging==25.0
+regex==2025.9.1
+requests==2.32.5
+requests-oauthlib==2.0.0
+
+1
+
+# PyTorch & Transformers
+torch==2.2.0
+tokenizers==0.22.0
+transformers==4.34.0
+# Google API & Sheets
+google-auth==2.40.3
+google-auth-oauthlib==1.2.2
+google-auth-httplib2==0.2.0
+gspread==6.2.1
+google-generativeai==0.7.0
+# Utilities
+tqdm==4.67.1
+tabulate==0.9.0
+Note: Use
+
+bert-base-uncased
+
+instead of
+
+ModernBERT
+
+for compatibility with
+
+Streamlit Cloud.
+
+4. Streamlit App Structure
+4.1 Global Configuration
+• Set page layout: st.set_page_config(layout="wide", page_title="Survivor
+Dashboard + AIMS LLM")
+• Apply custom CSS for a clean white theme.
+• Display banners.
+
+4.2 Tab 1: Survivor Dashboard
+• Sidebar to input Google Sheet URL and select worksheet.
+• Filters for Region, Industry, Category, Title, and Links.
+• Display rows with emojis corresponding to metadata.
+• Warn if no results are returned.
+
+4.3 Tab 2: AIMS LLM
+• Initialize BERT-based model ( bert-base-uncased ) and tokenizer.
+• Define AimsDistillModel for classification (11 labels, e.g., c3 (risk description) ).
+• Dataset class StoryDataset for tokenization and DataLoader preparation.
+• Two summarization options:
+• Upload text file.
+• Use filtered entries from Tab 1.
+• Chunk sentences and summarize each chunk with Google Gemini API .
+• Merge summaries into final coherent summary.
+
+4.4 Model Inference
+• Load pre-trained weights: AIMSDistill.pth
+
+2
+
+• Move model to GPU if available.
+• Generate predictions ( logits > 0.9 ) to classify sentences.
+• Summarize selected sentences using Gemini.
+
+5. Example Script Segmentation
+# Segment text into sentences
+sentences = sentence_segment(text_data)
+# Load dataset
+dataset = StoryDataset(sentences, tokenizer, max_length=60)
+dataloader = DataLoader(dataset, batch_size=32)
+# Inference
+for batch in dataloader:
+logits = model(input_ids=batch[0].to(device),
+attention_mask=batch[1].to(device))
+preds = (logits > 0.9).float()
+
+6. Google Gemini Summarization
+import google.generativeai as genai
+genai.configure(api_key=st.secrets['genai']['api_key'])
+model = genai.GenerativeModel("gemini-2.5-flash")
+prompt = f"Summarize the following risk description sentences:
+\n{sentences_chunk}"
+response = model.generate_content(prompt)
+summary = response.text
+• Chunk large datasets into 80-sentence segments.
+• Merge chunk summaries into a final coherent summary.
+
+7. Deployment Tips
+1. Use requirements.txt to install dependencies.
+2. Ensure AIMSDistill.pth is uploaded to the Streamlit Cloud app folder.
+3. Replace ModernBERT with bert-base-uncased to avoid KeyErrors.
+4. Configure Streamlit secrets for Google API keys:
+[genai]
+api_key = "YOUR-GOOGLE-API-KEY"
+
+3
+
+[google_service_account]
+{YOUR_SERVICE_ACCOUNT_JSON}
+5. Set trust_remote_code=True for AutoModel loading.
+6. Verify GPU availability for PyTorch on local or Streamlit Pro.
+
+8. Optional: Convert this guide to PDF
+from fpdf import FPDF
+pdf = FPDF()
+pdf.add_page()
+pdf.set_font("Arial", size=12)
+with open("deployment_guide.txt", "r") as f:
+for line in f:
+pdf.multi_cell(0, 6, line)
+pdf.output("Streamlit_Deployment_Guide.pdf")
+This generates a PDF version of the deployment guide ready for upload or reference.
+
+End of Deployment Guide
+
+4
+
+
