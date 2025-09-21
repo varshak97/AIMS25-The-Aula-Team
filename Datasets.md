@@ -25,7 +25,7 @@ Pre-processing outline:
   - Clean sentences for edge cases (abbreviations, decimal numbers, punctuation marks).  
   - Store each sentence in a CSV file, with one sentence per row.  
 
-<img src="schematic_diagrams/step1.png" alt="Sentence Segmentation Process" width="400"/>
+<img src="schematic_diagrams/aims_schematic_1.png" alt="Sentence Segmentation Process" width="400"/>
 
 ### Details of the Database  
 
