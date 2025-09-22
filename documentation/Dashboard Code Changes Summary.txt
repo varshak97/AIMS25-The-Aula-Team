@@ -1,0 +1,94 @@
+Survivor Dashboard + AIMSDistill project, highlighting optimizations, new features, and functionality changes.
+improvements:
+
+Code Changes and Enhancements Overview
+1. Memory and Performance Optimizations
+• Caching with st.cache_data and st.cache_resource :
+• Applied caching to heavy or frequently called functions to reduce memory usage and improve
+performance.
+◦ Google Sheet loading: Cached to prevent repeated API calls.
+◦ Model loading: AimsDistillModel and tokenizer cached to avoid reloading on every
+interaction.
+◦ Text preprocessing & DataLoader creation: Cached for repeated use during
+summarization.
+• Batch processing for AIMSDistill:
+• Implemented DataLoader batching with batch_size=32 for prediction on sentences.
+• This reduces GPU/CPU memory footprint when processing large amounts of text.
+
+2. Survivor Dashboard Enhancements
+• Dynamic Sidebar Filters:
+• Region, Industry, Category, Title, and Link filters implemented.
+• Filters are cumulative, allowing precise drill-down.
+• Emoji Mapping:
+• Added emojis for Region, Industry, and Category to improve readability.
+• Default emojis provided for missing or unknown categories.
+• Error Handling and Warnings:
+• Checks for empty dataframes after filtering and displays warnings when no results match.
+• Sidebar error messages for invalid Google Sheet URLs or inaccessible worksheets.
+
+3. AIMSDistill Integration and Enhancements
+• AIMSDistill Model Integration:
+• Added custom PyTorch model AimsDistillModel based on BERT ( bert-base-uncased ).
+• Predicts risk-related sentences ( logits[:,6] ) for summarization.
+• StoryDataset Class:
+• Encapsulates tokenization and attention mask creation for the model.
+• Compatible with PyTorch DataLoader for efficient batching.
+• Chunked Sentence Summarization:
+• Risk sentences are split into chunks of 80 for processing by Gemini 2.5.
+• Ensures summarization is manageable for large datasets or long text files.
+
+1
+
+4. Gemini Summarization Integration
+• Two Summarization Sources:
+• Uploaded Text File: Users can upload .txt files and generate AIMSDistill summaries.
+• Filtered Survivor Dashboard Entries: Summarize only selected filtered rows from the
+dashboard.
+• Summarization Pipeline:
+• Sentence segmentation and preprocessing.
+• Detection of risk sentences with AIMSDistill.
+• Chunking of sentences to manageable sizes.
+• Individual chunk summarization via Gemini 2.5.
+• Merging chunk summaries into one coherent, factual summary.
+• Canadian English Formatting:
+• Summaries are generated clearly, concisely, and factually without poetic or figurative language.
+
+5. Documentation and User Guidance
+• Documentation Tab Improvements:
+• Added detailed step-by-step user instructions for data loading, filtering, and summarization.
+• Instructions for text file uploads, filtered survivor entries, and downloading documentation as
+Markdown or PDF.
+• Downloadable Documentation:
+• Users can download the dashboard instructions in:
+◦ Markdown for easy editing.
+◦ PDF for offline reading (requires fpdf ).
+
+6. Visual and UI Enhancements
+• CSS Customization:
+• Dashboard colors, background, and table styles optimized for readability.
+• Card-based Results Display:
+• Each story is displayed in a styled card with padding, border radius, and colored emojis.
+• Responsive Layout:
+• Streamlit tabs and sidebar ensure easy navigation and clean visualization.
+
+7. Error Handling & Safety Features
+• Sensitive Content Warning:
+• Added prominent content warning on dashboard load.
+• Exception Handling:
+• Google Sheet loading errors, file processing errors, and summarization failures are gracefully
+handled with user feedback.
+• Stop Conditions:
+• Dashboard stops rendering if no valid data is loaded, preventing runtime errors.
+
+2
+
+Summary of Key Benefits of Changes
+• Memory Optimized: Caching prevents repeated expensive computations.
+• User-Friendly: Sidebar filters, emojis, and cards make navigation intuitive.
+• AI-Powered Insights: AIMSDistill + Gemini 2.5 produces automated risk summaries.
+• Documentation Ready: Detailed guidance for users to understand and use the dashboard
+effectively.
+• Error-Resilient: Built-in warnings and exception handling reduce user frustration.
+
+
+
