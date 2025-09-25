@@ -1,0 +1,229 @@
+STREAMLIT APPLICATION DEPLOYMENT GUIDE
+SURVIVOR DASHBOARD + AIMSDISTILL + GEMINI 2.5
+
+OVERVIEW:
+This guide provides instructions to deploy the Survivor Dashboard Streamlit application, which displays survivor stories and provides AI-assisted summarization using AIMSDistill and Gemini 2.5. 
+
+It covers environment setup, dependency installation, Google service account configuration, and deployment options.
+
+---
+
+1. ENVIRONMENT SETUP
+---------------------------------
+1. Install Python (>=3.10 recommended)
+   - Download from https://www.python.org/downloads/
+
+2. Create a virtual environment:
+   - Linux/macOS:
+     python3 -m venv venv
+     source venv/bin/activate
+   - Windows:
+     python -m venv venv
+     venv\Scripts\activate
+
+3. Upgrade pip:
+   pip install --upgrade pip
+
+---
+
+2. INSTALL DEPENDENCIES
+---------------------------------
+Install required packages:
+
+pip install streamlit pandas gspread google-auth google-auth-oauthlib google-auth-httplib2 \
+            torch transformers reportlab google-generativeai numpy
+
+Optional for PDF generation:
+- reportlab (already included above)
+
+---
+
+3. PROJECT FILE STRUCTURE
+---------------------------------
+Organize files like this:
+
+project/
+│
+├─ app.py                  # Main Streamlit application
+├─ assets/
+│   ├─ AULA_HORIZONTAL_GREEN_BANNER.png
+│   └─ survivor_dashboard_banner.png
+├─ requirements.txt        # Optional: pin dependency versions
+└─ secrets.toml            # Streamlit secrets (Google service account + API key)
+
+---
+
+4. GOOGLE SERVICE ACCOUNT SETUP
+---------------------------------
+1. Go to Google Cloud Console: https://console.cloud.google.com/
+2. Create a Service Account with access to Google Sheets and Drive.
+3. Generate a JSON key for the service account.
+4. Add it to Streamlit secrets (`secrets.toml`) as follows:
+
+[google_service_account]
+type = "service_account"
+project_id = "YOUR_PROJECT_ID"
+private_key_id = "YOUR_KEY_ID"
+private_key = "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+client_email = "service-account@project.iam.gserviceaccount.com"
+client_id = "YOUR_CLIENT_ID"
+auth_uri = "https://accounts.google.com/o/oauth2/auth"
+token_uri = "https://oauth2.googleapis.com/token"
+auth_provider_x509_cert_url = "https://www.googleapis.com/oauth2/v1/certs"
+client_x509_cert_url = "URL_FROM_JSON"
+
+5. Also add Google Generative AI API key:
+[genai]
+api_key = "YOUR_GENAI_API_KEY"
+
+---
+
+5. STREAMLIT CONFIGURATION IN CODE
+---------------------------------
+- Set page config and warning:
+st.set_page_config(layout="wide", page_title="Survivor Dashboard + AIMS LLM")
+
+- Add CSS customization and banners:
+st.markdown("<style>...</style>", unsafe_allow_html=True)
+st.image('assets/AULA_HORIZONTAL_GREEN_BANNER.png', width='stretch')
+st.image('assets/survivor_dashboard_banner.png', width='stretch')
+
+- Use tabs for layout:
+tab1, tab2, tab3 = st.tabs([...])
+
+---
+
+6. RUNNING THE APPLICATION LOCALLY
+---------------------------------
+1. Activate virtual environment
+2. Run Streamlit:
+streamlit run app.py
+
+3. Open the provided URL in your browser (usually http://localhost:8501)
+
+---
+
+7. DEPLOYMENT OPTIONS
+---------------------------------
+Option 1: Streamlit Community Cloud
+1. Push project to a GitHub repository
+2. Go to https://streamlit.io/cloud
+3. Connect GitHub repo
+4. Set secrets in Streamlit Cloud:
+   - google_service_account
+   - genai api_key
+5. Deploy the app
+6. Access via a public URL provided by Streamlit
+
+Option 2: Other Cloud Providers (AWS, GCP, Azure, Heroku)
+1. Ensure Python environment matches local setup
+2. Set environment variables for secrets
+3. Configure port (Streamlit default: 8501)
+4. Deploy using containerized app (Docker) or native Python environment
+5. Access app via the cloud instance public IP or domain
+
+---
+
+8. TIPS FOR PRODUCTION
+---------------------------------
+- Use @st.cache_data or @st.cache_resource to optimize model loading and Google Sheet queries.
+- Keep Google Sheets organized with consistent column names:
+  - REGION, INDUSTRY, CATEGORY, TITLE, DESCRIPTION, LINK
+- For large datasets, consider limiting rows or chunking to avoid memory overload.
+- Monitor logs for errors in file uploads, API access, or GPU usage (if using AIMSDistill on CUDA).
+
+---
+
+9. PITFALLS AND FIXES
+------------------------------------------------------------
+🔑 Google Service Account Credentials
+Error:
+Error loading sheet: [Errno 2] No such file or directory: '...json'
+Cause: Hard-coded path to JSON file not found.
+Fix: Store credentials in st.secrets instead of committing .json.
+Correct setup:
+- secrets.toml inside .streamlit/ folder:
+ [google_service_account]
+ type = "service_account"
+ project_id = "xxxx"
+ private_key_id = "xxxx"
+ private_key = "-----BEGIN PRIVATE KEY-----\nxxxx\n-----END PRIVATE
+KEY-----\n"
+ client_email = "xxxx@xxxx.iam.gserviceaccount.com"
+ client_id = "xxxx"
+ auth_uri = "https://accounts.google.com/o/oauth2/auth"
+ token_uri = "https://oauth2.googleapis.com/token"
+ auth_provider_x509_cert_url = "https://www.googleapis.com/oauth2/v1/
+certs"
+ client_x509_cert_url = "https://www.googleapis.com/robot/v1/
+metadata/x509/xxxx"
+- In app.py:
+ from google.oauth2.service_account import Credentials
+ creds =
+Credentials.from_service_account_info(st.secrets["google_service_accou
+nt"])
+ gc = gspread.authorize(creds)
+------------------------------------------------------------
+🔒 GitHub Secret Scanning / Push Protection
+Error:
+remote: Push cannot contain secrets
+Cause: Accidentally committed the Google Service Account JSON.
+Fix:
+1. Remove the file:
+ git rm --cached practical-lodge-341703-f87bbdac7e18.json
+ echo "*.json" >> .gitignore
+2. Rewrite Git history (since the secret was committed before):
+ pip install git-filter-repo
+ git filter-repo --path practical-lodge-341703-f87bbdac7e18.json --
+invert-paths
+3. Force push:
+ git push origin main --force
+------------------------------------------------------------
+🌍 Invalid OAuth Scope
+Error:
+('invalid_scope: Invalid OAuth scope or ID token audience provided.')
+Cause: Mixing up gspread.service_account(filename=...) with
+Credentials.from_service_account_info.
+Fix: Always use the same credential method (from_service_account_info)
+with st.secrets.
+------------------------------------------------------------
+🎨 UI/Styling Issues
+- Dark Mode overriding CSS → fixed by forcing color: black !important;
+- Table readability → applied CSS for black text + white background
+- Expander not stretching → applied CSS override for .streamlitexpander
+- Banner image → used st.image('assets/banner.png',
+use_container_width=True)
+- Background image (optional):
+ st.markdown(
+ f"""
+ <style>
+ .stApp {{
+ background: url("https://path/to/image.jpg");
+ background-size: cover;
+ }}
+ </style>
+ """,
+ unsafe_allow_html=True
+ )
+
+
+10. Biggest Lessons Learned:
+------------------------------------------------------------
+1. Never commit secrets (Google JSON).
+2. Always use st.secrets in Streamlit for production.
+3. Debugging file paths is crucial (No such file or directory often
+means missing /Users/...).
+4. UI tweaks require forcing CSS overrides.
+5. Git history must be cleaned if secrets were ever committed.
+
+
+11. ADDITIONAL RESOURCES
+---------------------------------
+- Streamlit Documentation: https://docs.streamlit.io/
+- Transformers Documentation: https://huggingface.co/docs/transformers/
+- Google Generative AI Docs: https://developers.generativeai.google/
+- AIMSDistill Implementation Notes: Included in app.py
+
+---
+
+END OF DEPLOYMENT GUIDE

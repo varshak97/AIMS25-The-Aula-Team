@@ -1,0 +1,180 @@
+SURVIVOR DASHBOARD + AIMSDISTILL CODE IMPLEMENTATION GUIDE
+
+OVERVIEW:
+This guide provides step-by-step instructions to implement the Survivor Dashboard with AIMSDistill and Gemini 2.5 summarization. It is intended for developers who want to set up the dashboard, load data, and generate AI-assisted summaries.
+
+---
+
+1. INSTALL REQUIRED PACKAGES
+---------------------------------
+Use pip to install the required packages:
+
+pip install streamlit pandas gspread google-auth google-auth-oauthlib google-auth-httplib2 torch transformers reportlab google-generativeai
+
+---
+
+2. IMPORT MODULES
+---------------------------------
+Import all necessary modules at the beginning of your script:
+
+import io
+import streamlit as st
+import pandas as pd
+import gspread
+from google.oauth2.service_account import Credentials
+import google.generativeai as genai
+from torch.utils.data import Dataset, DataLoader
+import torch
+import numpy as np
+import re
+from torch import nn
+from transformers import AutoTokenizer, AutoModel, AutoModelForMaskedLM
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import mm
+
+---
+
+3. STREAMLIT CONFIGURATION
+---------------------------------
+- Set page layout and warning for sensitive content:
+
+st.set_page_config(layout="wide", page_title="Survivor Dashboard + AIMS LLM")
+
+st.warning("""
+⚠️ Content Warning: This dashboard contains real survivor stories...
+""")
+
+- Apply custom CSS for colors and styling using st.markdown().
+
+- Add banner images:
+st.image('assets/AULA_HORIZONTAL_GREEN_BANNER.png', width='stretch')
+st.image('assets/survivor_dashboard_banner.png', width='stretch')
+
+---
+
+4. TAB LAYOUT
+---------------------------------
+- Create three tabs:
+
+tab1, tab2, tab3 = st.tabs([
+    "📖 Dashboard Documentation & Instructions",
+    "📊 Survivor Dashboard",
+    "🤖 Insight on Supply Chains (from AIMS)"
+])
+
+---
+
+5. CACHED FUNCTIONS
+---------------------------------
+Use @st.cache_data or @st.cache_resource to speed up repeated operations.
+
+a. Load tokenizer and model:
+
+def load_tokenizer_and_model(model_name="bert-base-uncased"):
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForMaskedLM.from_pretrained(model_name)
+    return tokenizer, model
+
+b. Load AIMSDistill model:
+
+class AimsDistillModel(nn.Module):
+    def __init__(self, tokenizer, model_name, dropout=0.0):
+        self.bert = AutoModel.from_pretrained(model_name)
+        self.dropout = nn.Dropout(dropout)
+        self.classifier = nn.Linear(self.bert.config.hidden_size, 11)
+    def forward(self, input_ids, attention_mask=None):
+        outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
+        pooled_output = outputs.last_hidden_state[:, 0, :]
+        logits = self.dropout(self.classifier(pooled_output))
+        return logits
+
+def load_aims_model(_tokenizer, model_name="bert-base-uncased", dropout=0.0):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = AimsDistillModel(_tokenizer, model_name, dropout).to(device)
+    model.eval()
+    return model, device
+
+c. Load Google Sheet data:
+
+def load_google_sheet(sheet_url, _creds):
+    gc = gspread.authorize(_creds)
+    sh = gc.open_by_url(sheet_url)
+    return {ws.title: pd.DataFrame(ws.get_all_records()) for ws in sh.worksheets()}
+
+d. Text preprocessing:
+
+def preprocess_text(text_data):
+    # Replace abbreviations, split sentences
+    ...
+
+e. Create DataLoader for AIMSDistill:
+
+def make_dataloader(sentences, tokenizer, max_length=60, batch_size=32):
+    class StoryDataset(Dataset):
+        ...
+    dataset = StoryDataset(sentences, tokenizer, max_length)
+    return DataLoader(dataset, batch_size=batch_size, shuffle=False)
+
+f. Chunk and summarize:
+
+def chunk_sentences(sent_list, chunk_size=80):
+    ...
+
+def summarize_chunk(chunk, _g_model):
+    prompt = "..."
+    return _g_model.generate_content(prompt).text
+
+def merge_summaries(chunk_summaries, _g_model):
+    prompt = "..."
+    return _g_model.generate_content(prompt).text
+
+---
+
+6. SURVIVOR DASHBOARD TAB (TAB 2)
+---------------------------------
+- Sidebar for Google Sheet URL input and filters:
+    - Region, Industry, Category, Title, Links
+- Load Google Sheet and select worksheet
+- Apply filters to dataframe
+- Display results as cards with emojis for Region, Industry, Category
+- Include links if available
+
+---
+
+7. AIMSDISTILL + GEMINI TAB (TAB 3)
+---------------------------------
+- Configure Google Generative AI:
+genai.configure(api_key=st.secrets["genai"]["api_key"])
+g_model = genai.GenerativeModel("gemini-2.5-flash")
+
+- Two summarization options:
+    1. Upload Text File
+        - Read file, preprocess, detect risk sentences, chunk, summarize, merge
+    2. Filtered Survivor Dashboard Entries
+        - Combine filtered entries, preprocess, chunk, summarize, merge
+
+- Display summary in a text area
+
+---
+
+8. DOCUMENTATION TAB (TAB 1)
+---------------------------------
+- Display documentation in markdown
+- Download options:
+    - Markdown file using st.download_button
+    - PDF file using reportlab canvas and in-memory BytesIO buffer
+
+---
+
+9. ADDITIONAL NOTES
+---------------------------------
+- Sensitive content warnings are essential.
+- Ensure Google Service Account credentials are stored in st.secrets.
+- Use caching to speed up repeated processing of models, sheets, and summaries.
+- Recommended column names in Google Sheet:
+    - REGION, INDUSTRY, CATEGORY, TITLE, DESCRIPTION, LINK
+
+---
+
+END OF IMPLEMENTATION GUIDE
