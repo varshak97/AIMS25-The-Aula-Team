@@ -25,7 +25,7 @@ We are Fellows of the Aula Fellowship for AI Science, Policy, and Tech. We are a
 
 # 4. Links
 - Demo: [App Link](https://aims-app.streamlit.app/)
-- GitHub: [fpasoslibres/AIMS-The-Aula-Team](https://github.com/varshak97/AIMS25-The-Aula-Team) 
+- GitHub: [varshak97/AIMS25-The-Aula-Team](https://github.com/varshak97/AIMS25-The-Aula-Team) 
 - Pitch Video: [Link to YouTube video](https://youtu.be/6Ox5CZ0LexA) 
 
 # 5. Datasets
@@ -39,10 +39,9 @@ Location: [/documentation](https://github.com/varshak97/AIMS25-The-Aula-Team/tre
 
 We provide:
 - [Comprehensive Project Package (CPP)](https://github.com/varshak97/AIMS25-The-Aula-Team/blob/main/documentation/Survivors%20Dashboard%20Complete%20Project%20Package%20AIMS%20Hackathon%202025%20Aula.pdf)
-- [AIMs Dashboard Instructions]()
-- [Code Implementation Guide]()
-- [Streamlit App Deployment Guide]()
-- [survivors_dashboard_documentation](https://github.com/varshak97/AIMS25-The-Aula-Team/blob/main/documentation/survivors_dashboard_documentation.pdf)
+- [AIMs Dashboard Instructions](https://github.com/varshak97/AIMS25-The-Aula-Team/blob/main/documentation/AIMs%20Dashboard%20Instructions.pdf)
+- [Code Implementation Guide](https://github.com/varshak97/AIMS25-The-Aula-Team/blob/main/documentation/Code-Implementation-Guide.txt)
+- [Streamlit App Deployment Guide](https://github.com/varshak97/AIMS25-The-Aula-Team/blob/main/documentation/Streamlit-Deployment-Guide.txt)
 
 # 8. Declaration of Intellectual Property
 Copyright the [https://theaulafellowship.org](https://theaulafellowship.org)
